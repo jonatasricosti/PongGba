@@ -1,5 +1,12 @@
 #define BG2 1024
 
+// algumas cores
+unsigned short blue = 0x7C00;
+unsigned short green = 0x3E0;
+unsigned short red = 0x1F;
+unsigned short white = 0x7FFF;
+unsigned short yellow = 0x3FF;
+
 // use essa função pra ativar o mode de video
 void SetVideoMode(int mode)
 {
@@ -40,9 +47,10 @@ int main()
 // ativa o mode 3 e o bg2
 SetVideoMode(3 | BG2);
 
-DrawRect(20,80,8,20,0xff);
 
-DrawRect(240-2*8,80,8,20,0xff);
+DrawRect(20,80,8,20,blue);
+
+DrawRect(240-20-2*8,80,8,20,red);
 
 return 0;
 }
