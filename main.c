@@ -1,9 +1,23 @@
+
+
+
+#define VIDC_BASE_HALF	((volatile unsigned short int*) 0x04000000)
+#define VCOUNT (VIDC_BASE_HALF[3])
+
+// use essa função pra fazer o VSync
+void waitRetrace()
+{
+	while(VCOUNT != 160);
+	while(VCOUNT == 160);
+}
+
+
 const int screen_width  = 240;
 const int screen_height = 160;
 
 #define BG2 1024
 
-// algumas cores
+// algumas cores do game boy advance BRG15bits
 unsigned short blue = 0x7C00;
 unsigned short green = 0x3E0;
 unsigned short red = 0x1F;
@@ -11,7 +25,7 @@ unsigned short yellow = 0x3FF;
 unsigned short white = 0x7FFF;
 unsigned short black = 0;
 
-// use essa função pra ativar o mode de video
+// use essa função pra ativar o mode de vídeo do game boy advance
 void SetVideoMode(int mode)
 {
 	*(unsigned long *)0x4000000 = mode;
@@ -20,14 +34,14 @@ void SetVideoMode(int mode)
 
 unsigned short *vram = (unsigned short *)0x6000000;
 
-// use essa função pra desenhar pixel na tela mode3
+// use essa função pra desenhar uma pixel na tela do gba mode3
 void DrawPixel(int x, int y, unsigned short color)
 {
 	vram[x+y*240] = color;
 }
 
 
-// use essa função pra colocar cor de fundo na tela mode 3 e 5
+// use essa função pra colocar cor de fundo na tela do gba mode 3 e 5
 void BackgroundColor(unsigned short color)
 {
 	int i;
@@ -89,6 +103,89 @@ void DrawRect(int x, int y, int width, int height, unsigned short color)
 	}
 }
 
+// essa estrutura representa um retângulo
+typedef struct rectangle
+{
+	int x;
+	int y;
+	int width;
+	int height;
+	
+}rectangle;
+
+rectangle player1;
+rectangle player2;
+
+// essa estrutura representa uma bola
+typedef struct _BALL
+{
+	int x;
+	int y;
+	int vx;
+	int vy;
+	int width;
+	int height;
+}_BALL;
+
+
+_BALL ball;
+
+// inicia as propriedades dos retângulos
+void ResetGame()
+{
+	player1.width = 8;
+	player1.height = 28;
+	player1.x = player1.width;
+	player1.y = (screen_height-player1.height)/2;
+	
+	player2.width = 8;
+	player2.height = 28;
+	player2.x = screen_width - 2*player2.width;
+	player2.y = (screen_height-player2.height)/2;
+	
+	ball.width  = 6;
+	ball.height = 6;
+	ball.x = (screen_width-ball.width)/2;
+	ball.y = (screen_height-ball.height)/2;
+	
+	ball.vx = 5;
+	ball.vy = 2;
+}
+
+// essa função move a bola e verifica colisões
+void MoveBall()
+{
+	ball.x = ball.x + ball.vx;
+	ball.y = ball.y + ball.vy;
+	
+	
+	// se passou do lado esquerdo da tela
+	if(ball.x < 0)
+	{
+		ball.vx = -ball.vx;
+	}
+	
+	// se passou do lado direito da tela
+	if(ball.x > screen_width - ball.width)
+	{
+		ball.vx = -ball.vx;
+	}
+	
+	
+	// se passou do lado de cima da tela
+	if(ball.y < 0)
+	{
+		ball.vy = -ball.vy;
+	}
+	
+	// se passou do lado de baixo da tela
+	if(ball.y > screen_height - ball.height)
+	{
+		ball.vy = -ball.vy;
+	}
+}
+
+
 int main()
 {
 
@@ -96,17 +193,31 @@ int main()
 SetVideoMode(3 | BG2);
 
 
+ResetGame();
+
 BackgroundColor(white);
 
 // game loop
 while(1)
 {
-	DrawRect(20,80,8,28,blue);
-	DrawRect(240-20-2*8,80,8,28,red);
 	
-	DrawTextMode3(1,20,"PROGRAMAR EH LEGAL",black);
-	DrawTextMode3(1,30,"C E C++ EH MUITO LEGAL",green);
-	DrawTextMode3(1,40,"PONG PARA O GAME BOY ADVANCE",yellow);
+	
+	waitRetrace();
+	
+	// desenha retângulos brancos para limpar a tela estamos no mode 3 por isso temos que fazer isso
+	DrawRect(119,0,2,160,white);
+	DrawRect(player1.x,player1.y,player1.width,player1.height,white);
+	DrawRect(player2.x,player2.y,player2.width,player2.height,white);
+	DrawRect(ball.x,ball.y,ball.width,ball.height,white);
+	
+	MoveBall();
+	
+	// desenha os retângulos coloridos
+	DrawRect(119,0,2,160,0); // desenha a rede
+	DrawRect(player1.x,player1.y,player1.width,player1.height,blue); // desenha o retângulo azul
+	DrawRect(player2.x,player2.y,player2.width,player2.height,red); // desenha o retângulo vermelho
+	DrawRect(ball.x,ball.y,ball.width,ball.height,0xff); // desenha a bola
+
 }
 
 
