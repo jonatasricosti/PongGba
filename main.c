@@ -4,6 +4,36 @@
 #define VIDC_BASE_HALF	((volatile unsigned short int*) 0x04000000)
 #define VCOUNT (VIDC_BASE_HALF[3])
 
+
+#define BUTTON_A       1
+#define BUTTON_B       2
+#define BUTTON_SELECT  4
+#define BUTTON_START   8
+#define BUTTON_RIGHT   16
+#define BUTTON_LEFT    32
+#define BUTTON_UP      64
+#define BUTTON_DOWN    128
+#define BUTTON_R       256
+#define BUTTON_L       512
+
+// use essa função pra ver se um botão do game boy advance foi apertado
+int buttonPressed(int button)
+{
+	volatile unsigned int *BUTTON = (volatile unsigned int*)0x4000130;
+	
+	if( !( (*BUTTON) & button)  )
+	{
+		return 1;
+	}
+	
+	else
+	{
+		return 0;
+	}
+}
+
+
+
 // use essa função pra fazer o VSync
 void waitRetrace()
 {
@@ -103,6 +133,20 @@ void DrawRect(int x, int y, int width, int height, unsigned short color)
 	}
 }
 
+// use essa função pra detectar colisão entre dois retângulos
+int AABB(int x1, int y1, int width1, int height1, int x2, int y2, int width2, int height2)
+{
+    if(x1 < x2 + width2 &&
+	x2 < x1+width1 &&
+	y1 < y2+height2 &&
+	y2 < y1+height1)
+	{
+		return 1;
+	}
+
+	return 0;
+}
+
 // essa estrutura representa um retângulo
 typedef struct rectangle
 {
@@ -162,13 +206,17 @@ void MoveBall()
 	// se passou do lado esquerdo da tela
 	if(ball.x < 0)
 	{
-		ball.vx = -ball.vx;
+		// coloca a bola no centro da tela
+		ball.x = (screen_width-ball.width)/2;
+		ball.y = (screen_height-ball.height)/2;
 	}
 	
 	// se passou do lado direito da tela
 	if(ball.x > screen_width - ball.width)
 	{
-		ball.vx = -ball.vx;
+		// coloca a bola no centro da tela
+		ball.x = (screen_width-ball.width)/2;
+		ball.y = (screen_height-ball.height)/2;
 	}
 	
 	
@@ -182,6 +230,80 @@ void MoveBall()
 	if(ball.y > screen_height - ball.height)
 	{
 		ball.vy = -ball.vy;
+	}
+	
+	
+	// colisão com o player1
+	if(AABB(player1.x,player1.y,player1.width,player1.height,ball.x,ball.y,ball.width,ball.height))
+	{
+		ball.vx = -ball.vx;
+	}
+	
+	// colisão com o player2
+	if(AABB(player2.x,player2.y,player2.width,player2.height,ball.x,ball.y,ball.width,ball.height))
+	{
+		ball.vx = -ball.vx;
+	}
+}
+
+// use essa função pra mover o player1
+void MovePlayer1(int speed)
+{
+	if(buttonPressed(BUTTON_DOWN))
+	{
+		player1.y = player1.y+speed;
+	}
+	
+	if(buttonPressed(BUTTON_UP))
+	{
+		player1.y = player1.y-speed;
+	}
+	
+	// colisão lado de cima
+	if(player1.y < 0)
+	{
+		player1.y = 0;
+	}
+	
+	// colisão lado de baixo
+	if(player1.y > screen_height-player1.height)
+	{
+		player1.y = screen_height-player1.height;
+	}
+}
+
+
+// use essa função pra mover o player2 por inteligência1 artificial
+void MovePlayer2(int speed)
+{
+	int py = player2.y + player2.height/2;
+	
+	if(ball.vx > 0 && ball.x > 100)
+	{
+		if(py > ball.y)
+		{
+			// move pra cima
+			player2.y = player2.y - speed;
+		}
+		
+		
+		if(py < ball.y)
+		{
+			// move pra baixo
+			player2.y = player2.y + speed;
+		}
+	}
+		
+	// colisão lado de cima
+	if(player2.y < 0)
+	{
+		player2.y = 0;
+	}
+	
+	// colisão lado de baixo
+	if(player2.y > screen_height-player2.height)
+	{
+		player2.y = screen_height-player2.height;
 	}
 }
 
@@ -211,6 +333,8 @@ while(1)
 	DrawRect(ball.x,ball.y,ball.width,ball.height,white);
 	
 	MoveBall();
+	MovePlayer1(3);
+	MovePlayer2(4);
 	
 	// desenha os retângulos coloridos
 	DrawRect(119,0,2,160,0); // desenha a rede
