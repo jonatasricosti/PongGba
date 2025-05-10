@@ -154,6 +154,7 @@ typedef struct rectangle
 	int y;
 	int width;
 	int height;
+	int score;
 	
 }rectangle;
 
@@ -181,11 +182,13 @@ void ResetGame()
 	player1.height = 28;
 	player1.x = player1.width;
 	player1.y = (screen_height-player1.height)/2;
+	player1.score = 0;
 	
 	player2.width = 8;
 	player2.height = 28;
 	player2.x = screen_width - 2*player2.width;
 	player2.y = (screen_height-player2.height)/2;
+	player2.score = 0;
 	
 	ball.width  = 6;
 	ball.height = 6;
@@ -202,13 +205,13 @@ void MoveBall()
 	ball.x = ball.x + ball.vx;
 	ball.y = ball.y + ball.vy;
 	
-	
 	// se passou do lado esquerdo da tela
 	if(ball.x < 0)
 	{
 		// coloca a bola no centro da tela
 		ball.x = (screen_width-ball.width)/2;
 		ball.y = (screen_height-ball.height)/2;
+		player2.score = player2.score+1; // player2 faz um ponto
 	}
 	
 	// se passou do lado direito da tela
@@ -217,6 +220,7 @@ void MoveBall()
 		// coloca a bola no centro da tela
 		ball.x = (screen_width-ball.width)/2;
 		ball.y = (screen_height-ball.height)/2;
+		player1.score = player1.score+1; // player1 faz um ponto
 	}
 	
 	
@@ -307,6 +311,35 @@ void MovePlayer2(int speed)
 	}
 }
 
+// use essa função pra monstrar o placar na tela
+void DrawScore()
+{
+	char m1[10];
+	char m2[10];
+	
+	
+	sprintf(m1,"%i",player1.score);
+	sprintf(m2,"%i",player2.score);
+	
+	DrawRect(96,46,3*8,8,white);
+	DrawRect(136,46,3*8,8,white);
+	
+	DrawTextMode3(96,46,m1,0xff);
+	DrawTextMode3(136,46,m2,0xff);
+	
+	
+	if(player1.score >= 99)
+	{
+		player1.score = 99;
+	}
+	
+	if(player2.score >= 99)
+	{
+		player2.score = 99;
+	}
+
+}
+
 
 int main()
 {
@@ -322,8 +355,6 @@ BackgroundColor(white);
 // game loop
 while(1)
 {
-	
-	
 	waitRetrace();
 	
 	// desenha retângulos brancos para limpar a tela estamos no mode 3 por isso temos que fazer isso
@@ -337,6 +368,7 @@ while(1)
 	MovePlayer2(4);
 	
 	// desenha os retângulos coloridos
+	DrawScore();
 	DrawRect(119,0,2,160,0); // desenha a rede
 	DrawRect(player1.x,player1.y,player1.width,player1.height,blue); // desenha o retângulo azul
 	DrawRect(player2.x,player2.y,player2.width,player2.height,red); // desenha o retângulo vermelho
